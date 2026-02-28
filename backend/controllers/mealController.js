@@ -272,3 +272,72 @@ exports.addMealItem = (req, res) => {
   );
 
 };
+
+// ================= DELETE MEAL =================
+exports.deleteMeal = (req, res) => {
+
+  const userId = req.user.id;
+  const mealId = req.params.id;
+
+  // check owner
+  const checkSql =
+    "SELECT * FROM meal_logs WHERE id = ? AND user_id = ?";
+
+  db.query(
+    checkSql,
+    [mealId, userId],
+    (err, result) => {
+
+      if (err)
+        return res.status(500).json({
+          message: err.message
+        });
+
+      if (result.length === 0) {
+        return res.status(404).json({
+          message: "Meal not found"
+        });
+      }
+
+      // delete items first
+      const deleteItemsSql =
+        "DELETE FROM meal_items WHERE meal_log_id = ?";
+
+      db.query(
+        deleteItemsSql,
+        [mealId],
+        (err) => {
+
+          if (err)
+            return res.status(500).json({
+              message: err.message
+            });
+
+          // delete meal
+          const deleteMealSql =
+            "DELETE FROM meal_logs WHERE id = ?";
+
+          db.query(
+            deleteMealSql,
+            [mealId],
+            (err) => {
+
+              if (err)
+                return res.status(500).json({
+                  message: err.message
+                });
+
+              res.json({
+                message: "Meal deleted"
+              });
+
+            }
+          );
+
+        }
+      );
+
+    }
+  );
+
+};

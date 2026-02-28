@@ -12,36 +12,34 @@ router.get(
   mealController.getMeals
 );
 
-
 router.get(
   "/summary/today",
   verifyToken,
   mealController.getTodaySummary
 );
 
-
-// GET meal by id
 router.get(
   "/:id",
   verifyToken,
   mealController.getMealById
 );
 
-
-// CREATE meal
 router.post(
   "/",
   verifyToken,
   mealController.createMeal
 );
 
-
-// ADD food
 router.post(
   "/:mealId/items",
   verifyToken,
   mealController.addMealItem
 );
 
+router.delete(
+  "/:id",
+  verifyToken,
+  mealController.deleteMeal
+);
 
 module.exports = router;
