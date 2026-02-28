@@ -20,7 +20,11 @@ const foodRoutes =
 const mealRoutes =
   require("./routes/mealRoutes");
 
-const dashboardRoutes = require("./routes/dashboardRoutes");
+const dashboardRoutes = 
+  require("./routes/dashboardRoutes");
+
+const reportRoutes =
+  require("./routes/reportRoutes");
 
 
 // use routes
@@ -33,6 +37,7 @@ app.use("/api/meals", mealRoutes);
 
 app.use("/api/dashboard", dashboardRoutes);
 
+app.use("/api/report", reportRoutes);
 
 // start server
 

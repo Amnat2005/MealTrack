@@ -2,31 +2,50 @@ const db = require("../config/db");
 
 
 // ================= GET ALL MEALS =================
-exports.getMeals = (req, res) => {
+exports.getMeals = async (req, res) => {
+  try {
 
-  const userId = req.user.id;
+    const userId = req.user.id;
 
-  const sql = `
-    SELECT *
-    FROM meal_logs
-    WHERE user_id = ?
-    ORDER BY meal_date DESC
-  `;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const offset = (page - 1) * limit;
 
-  db.query(sql, [userId], (err, results) => {
+    const date = req.query.date;
 
-    if (err) {
-      return res.status(500).json({
-        message: err.message
-      });
+    let sql = `
+      SELECT *
+      FROM meal_logs
+      WHERE user_id = ?
+    `;
+
+    const params = [userId];
+
+    if (date) {
+      sql += " AND DATE(meal_date) = ?";
+      params.push(date);
     }
 
-    res.json(results);
+    sql += " ORDER BY meal_date DESC LIMIT ? OFFSET ?";
+    params.push(limit, offset);
 
-  });
+    const [rows] = await db.query(sql, params);
 
+    res.json({
+      page,
+      limit,
+      count: rows.length,
+      data: rows,
+    });
+
+  } catch (err) {
+
+    res.status(500).json({
+      message: err.message
+    });
+
+  }
 };
-
 
 
 // ================= GET MEAL BY ID =================
