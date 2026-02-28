@@ -1,80 +1,145 @@
-const Food = require("../models/foodModel");
+const db = require("../config/db");
 
-// GET all foods
+
+// ================= GET FOODS =================
 exports.getFoods = (req, res) => {
-  Food.getAllFoods((err, results) => {
+
+  const sql = `
+    SELECT *
+    FROM foods
+    ORDER BY name ASC
+  `;
+
+  db.query(sql, (err, results) => {
+
     if (err) {
-      console.error("SQL ERROR (getFoods):", err);
-      return res.status(500).json({ message: err.message });
+      return res.status(500).json({
+        message: err.message
+      });
     }
-    res.status(200).json(results);
+
+    res.json(results);
+
   });
+
 };
 
-// GET single food by ID
-exports.getFood = (req, res) => {
+
+
+// ================= GET FOOD BY ID =================
+exports.getFoodById = (req, res) => {
+
   const id = req.params.id;
 
-  Food.getFoodById(id, (err, results) => {
+  const sql = `
+    SELECT *
+    FROM foods
+    WHERE id = ?
+  `;
+
+  db.query(sql, [id], (err, results) => {
+
     if (err) {
-      console.error("SQL ERROR (getFood):", err);
-      return res.status(500).json({ message: err.message });
+      return res.status(500).json({
+        message: err.message
+      });
     }
 
-    if (!results || results.length === 0) {
-      return res.status(404).json({ message: "Food not found" });
+    if (results.length === 0) {
+      return res.status(404).json({
+        message: "Food not found"
+      });
     }
 
-    res.status(200).json(results[0]);
+    res.json(results[0]);
+
   });
+
 };
 
-// CREATE new food
+
+
+// ================= CREATE FOOD =================
 exports.createFood = (req, res) => {
-  const { name, calories, unit, created_by } = req.body;
 
-  if (!name || !calories) {
-    return res.status(400).json({ message: "Name and calories are required" });
-  }
-
-  Food.createFood({ name, calories, unit, created_by }, (err, result) => {
-    if (err) {
-      console.error("SQL ERROR (createFood):", err);
-      return res.status(500).json({ message: err.message });
-    }
-
-    res.status(201).json({
-      message: "Food created successfully",
-      id: result.insertId,
-    });
-  });
-};
-
-// UPDATE food
-exports.updateFood = (req, res) => {
-  const id = req.params.id;
   const { name, calories, unit } = req.body;
 
-  Food.updateFood(id, { name, calories, unit }, (err, result) => {
-    if (err) {
-      console.error("SQL ERROR (updateFood):", err);
-      return res.status(500).json({ message: err.message });
-    }
+  if (!name || !calories) {
+    return res.status(400).json({
+      message: "name and calories required"
+    });
+  }
 
-    res.status(200).json({ message: "Food updated successfully" });
-  });
+  const sql = `
+    INSERT INTO foods
+    (name, calories, unit)
+    VALUES (?, ?, ?)
+  `;
+
+  db.query(
+    sql,
+    [name, calories, unit],
+    (err) => {
+
+      if (err) {
+        return res.status(500).json({
+          message: err.message
+        });
+      }
+
+      res.status(201).json({
+        message: "Food created"
+      });
+
+    }
+  );
+
 };
 
-// DELETE food
+
+
 exports.deleteFood = (req, res) => {
-  const id = req.params.id;
 
-  Food.deleteFood(id, (err, result) => {
-    if (err) {
-      console.error("SQL ERROR (deleteFood):", err);
-      return res.status(500).json({ message: err.message });
+  const foodId = req.params.id;
+
+  // ลบใน meal_items ก่อน
+  const deleteItemsSql =
+    "DELETE FROM meal_items WHERE food_id = ?";
+
+  db.query(
+    deleteItemsSql,
+    [foodId],
+    (err) => {
+
+      if (err) {
+        return res.status(500).json({
+          message: err.message
+        });
+      }
+
+      // แล้วค่อยลบ food
+      const deleteFoodSql =
+        "DELETE FROM foods WHERE id = ?";
+
+      db.query(
+        deleteFoodSql,
+        [foodId],
+        (err) => {
+
+          if (err) {
+            return res.status(500).json({
+              message: err.message
+            });
+          }
+
+          res.json({
+            message: "Food deleted"
+          });
+
+        }
+      );
+
     }
+  );
 
-    res.status(200).json({ message: "Food deleted successfully" });
-  });
 };

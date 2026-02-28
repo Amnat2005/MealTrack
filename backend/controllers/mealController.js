@@ -1,13 +1,13 @@
 const db = require("../config/db");
 
 
-// ================= GET MEALS =================
+// ================= GET ALL MEALS =================
 exports.getMeals = (req, res) => {
 
   const userId = req.user.id;
 
   const sql = `
-    SELECT * 
+    SELECT *
     FROM meal_logs
     WHERE user_id = ?
     ORDER BY meal_date DESC
@@ -84,7 +84,6 @@ exports.getMealById = (req, res) => {
 exports.createMeal = (req, res) => {
 
   const userId = req.user.id;
-
   const { meal_date, meal_type } = req.body;
 
   if (!meal_date || !meal_type) {
@@ -121,11 +120,40 @@ exports.createMeal = (req, res) => {
 
 
 
+// ================= TODAY SUMMARY =================
+exports.getTodaySummary = (req, res) => {
+
+  const userId = req.user.id;
+
+  const sql = `
+    SELECT
+      DATE(meal_date) AS date,
+      SUM(total_calories) AS total
+    FROM meal_logs
+    WHERE user_id = ?
+    AND DATE(meal_date) = CURDATE()
+    GROUP BY DATE(meal_date)
+  `;
+
+  db.query(sql, [userId], (err, result) => {
+
+    if (err)
+      return res.status(500).json({
+        message: err.message
+      });
+
+    res.json(result);
+
+  });
+
+};
+
+
+
 // ================= ADD FOOD =================
 exports.addMealItem = (req, res) => {
 
   const userId = req.user.id;
-
   const mealId = req.params.mealId;
 
   const { food_id, quantity } = req.body;
@@ -138,12 +166,10 @@ exports.addMealItem = (req, res) => {
 
   }
 
-
   // check meal owner
 
   const checkMealSql =
     "SELECT * FROM meal_logs WHERE id = ? AND user_id = ?";
-
 
   db.query(
     checkMealSql,
@@ -155,7 +181,6 @@ exports.addMealItem = (req, res) => {
           message: err.message
         });
 
-
       if (mealResults.length === 0) {
 
         return res.status(403).json({
@@ -164,12 +189,10 @@ exports.addMealItem = (req, res) => {
 
       }
 
-
       // get food
 
       const foodSql =
         "SELECT * FROM foods WHERE id = ?";
-
 
       db.query(
         foodSql,
@@ -181,7 +204,6 @@ exports.addMealItem = (req, res) => {
               message: err.message
             });
 
-
           if (foodResults.length === 0) {
 
             return res.status(404).json({
@@ -190,12 +212,10 @@ exports.addMealItem = (req, res) => {
 
           }
 
-
           const food = foodResults[0];
 
           const totalCalories =
             food.calories * quantity;
-
 
           // insert item
 
@@ -204,7 +224,6 @@ exports.addMealItem = (req, res) => {
             (meal_log_id, food_id, quantity, calories)
             VALUES (?, ?, ?, ?)
           `;
-
 
           db.query(
             insertSql,
@@ -216,7 +235,6 @@ exports.addMealItem = (req, res) => {
                   message: err.message
                 });
 
-
               // update total
 
               const updateSql = `
@@ -225,7 +243,6 @@ exports.addMealItem = (req, res) => {
                 total_calories + ?
                 WHERE id = ?
               `;
-
 
               db.query(
                 updateSql,
@@ -236,7 +253,6 @@ exports.addMealItem = (req, res) => {
                     return res.status(500).json({
                       message: err.message
                     });
-
 
                   res.json({
                     message:

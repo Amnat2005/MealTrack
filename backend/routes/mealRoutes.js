@@ -5,20 +5,43 @@ const mealController = require("../controllers/mealController");
 const { verifyToken } = require("../middleware/authMiddleware");
 
 
-// ================= GET ALL MEALS =================
-router.get("/", verifyToken, mealController.getMeals);
+// GET all meals
+router.get(
+  "/",
+  verifyToken,
+  mealController.getMeals
+);
 
 
-// ================= GET MEAL BY ID =================
-router.get("/:id", verifyToken, mealController.getMealById);
+router.get(
+  "/summary/today",
+  verifyToken,
+  mealController.getTodaySummary
+);
 
 
-// ================= CREATE MEAL =================
-router.post("/", verifyToken, mealController.createMeal);
+// GET meal by id
+router.get(
+  "/:id",
+  verifyToken,
+  mealController.getMealById
+);
 
 
-// ================= ADD FOOD TO MEAL =================
-router.post("/:mealId/items", verifyToken, mealController.addMealItem);
+// CREATE meal
+router.post(
+  "/",
+  verifyToken,
+  mealController.createMeal
+);
+
+
+// ADD food
+router.post(
+  "/:mealId/items",
+  verifyToken,
+  mealController.addMealItem
+);
 
 
 module.exports = router;
