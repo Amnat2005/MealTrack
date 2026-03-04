@@ -2,144 +2,91 @@ const db = require("../config/db");
 
 
 // ================= GET FOODS =================
-exports.getFoods = (req, res) => {
+exports.getFoods = async (req, res) => {
+  try {
+    console.log("GET FOODS CALLED");
 
-  const sql = `
-    SELECT *
-    FROM foods
-    ORDER BY name ASC
-  `;
+    const sql = `SELECT * FROM foods ORDER BY name ASC`;
 
-  db.query(sql, (err, results) => {
+    const [rows] = await db.query(sql);
 
-    if (err) {
-      return res.status(500).json({
-        message: err.message
-      });
-    }
+    res.json(rows);
 
-    res.json(results);
-
-  });
-
+  } catch (err) {
+    console.error("DB ERROR >>>", err);
+    res.status(500).json({ message: err.message });
+  }
 };
 
-
-
 // ================= GET FOOD BY ID =================
-exports.getFoodById = (req, res) => {
+exports.getFoodById = async (req, res) => {
+  try {
+    const id = req.params.id;
 
-  const id = req.params.id;
+    const sql = `SELECT * FROM foods WHERE id = ?`;
 
-  const sql = `
-    SELECT *
-    FROM foods
-    WHERE id = ?
-  `;
+    const [rows] = await db.query(sql, [id]);
 
-  db.query(sql, [id], (err, results) => {
-
-    if (err) {
-      return res.status(500).json({
-        message: err.message
-      });
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Food not found" });
     }
 
-    if (results.length === 0) {
-      return res.status(404).json({
-        message: "Food not found"
-      });
-    }
+    res.json(rows[0]);
 
-    res.json(results[0]);
-
-  });
-
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
 };
 
 
 
 // ================= CREATE FOOD =================
-exports.createFood = (req, res) => {
+exports.createFood = async (req, res) => {
+  try {
+    const { name, calories, unit } = req.body;
 
-  const { name, calories, unit } = req.body;
-
-  if (!name || !calories) {
-    return res.status(400).json({
-      message: "name and calories required"
-    });
-  }
-
-  const sql = `
-    INSERT INTO foods
-    (name, calories, unit)
-    VALUES (?, ?, ?)
-  `;
-
-  db.query(
-    sql,
-    [name, calories, unit],
-    (err) => {
-
-      if (err) {
-        return res.status(500).json({
-          message: err.message
-        });
-      }
-
-      res.status(201).json({
-        message: "Food created"
+    if (!name || !calories) {
+      return res.status(400).json({
+        message: "name and calories required"
       });
-
     }
-  );
 
+    const sql = `
+      INSERT INTO foods (name, calories, unit)
+      VALUES (?, ?, ?)
+    `;
+
+    await db.query(sql, [name, calories, unit]);
+
+    res.status(201).json({ message: "Food created" });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
 };
 
 
 
-exports.deleteFood = (req, res) => {
+exports.deleteFood = async (req, res) => {
+  try {
+    const foodId = req.params.id;
 
-  const foodId = req.params.id;
+    await db.query(
+      "DELETE FROM meal_items WHERE food_id = ?",
+      [foodId]
+    );
 
-  // ลบใน meal_items ก่อน
-  const deleteItemsSql =
-    "DELETE FROM meal_items WHERE food_id = ?";
+    await db.query(
+      "DELETE FROM foods WHERE id = ?",
+      [foodId]
+    );
 
-  db.query(
-    deleteItemsSql,
-    [foodId],
-    (err) => {
+    res.json({ message: "Food deleted" });
 
-      if (err) {
-        return res.status(500).json({
-          message: err.message
-        });
-      }
-
-      // แล้วค่อยลบ food
-      const deleteFoodSql =
-        "DELETE FROM foods WHERE id = ?";
-
-      db.query(
-        deleteFoodSql,
-        [foodId],
-        (err) => {
-
-          if (err) {
-            return res.status(500).json({
-              message: err.message
-            });
-          }
-
-          res.json({
-            message: "Food deleted"
-          });
-
-        }
-      );
-
-    }
-  );
-
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
 };
