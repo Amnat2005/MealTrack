@@ -98,11 +98,15 @@ export default function Meals() {
   };
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-GB");
-  };
+  const date = new Date(dateString);
 
-  // ✅ Group ตามวันอย่างเดียว
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
   const groupedByDate = meals.reduce((acc, meal) => {
     const dateKey = meal.meal_date;
 
